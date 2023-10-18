@@ -9,9 +9,9 @@ import 'widgets/localizations.dart';
 import 'widgets/widget.dart';
 
 Future<void> publish(
-  Widget widget, {
-  Directory directory,
-  Directory assets,
+  Widget? widget, {
+  Directory? directory,
+  Directory? assets,
 }) async {
   directory ??= Directory('build');
   assets ??= Directory('assets');
@@ -24,7 +24,7 @@ Future<void> publish(
   );
 
   if (widget is StatelessWidget) {
-    widget = (widget as StatelessWidget).build(context);
+    widget = widget.build(context) as Widget?;
   }
 
   Application application;
@@ -43,15 +43,14 @@ Future<void> publish(
 
   for (var locale in application.supportedLocales) {
     print('[Locale($locale)]');
-    final localeDirectory =
-        Directory(path.join(directory.path, locale.toString()));
+    final localeDirectory = Directory(path.join(directory.path, locale.toString()));
     await localeDirectory.create(recursive: true);
 
+    print(await assets.exists());
     // Copying all assets
-    if (assets != null && await assets.exists()) {
+    if (await assets.exists()) {
       print('  [Assets]');
-      final localAssetDestination =
-          Directory(path.join(localeDirectory.path, 'assets'));
+      final localAssetDestination = Directory(path.join(localeDirectory.path, 'assets'));
       await localAssetDestination.create(recursive: true);
 
       final items = await assets.list(recursive: true);
@@ -80,10 +79,9 @@ Future<void> publish(
         child: routedApp,
       );
       final result = await localizedApp.render(context);
-      final file =
-          File(path.join(localeDirectory.path, route.relativeUrl + '.html'));
+      final file = File(path.join(localeDirectory.path, route.relativeUrl + '.html'));
       print("   - '${file.path}");
-      await file.writeAsString(result.outerHtml);
+      await file.writeAsString(result.outerHtml!);
     }
   }
 }

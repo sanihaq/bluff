@@ -1,22 +1,21 @@
 import 'dart:async';
 
 import 'package:bluff/src/base/border_radius.dart';
+import 'package:bluff/src/base/decoration.dart';
 import 'package:bluff/src/base/image.dart';
 import 'package:bluff/src/base/keys.dart';
-import 'package:universal_html/prefer_universal/html.dart' as html;
-
-import 'package:bluff/src/base/decoration.dart';
+import 'package:universal_html/html.dart' as html;
 
 import '../build_context.dart';
 import 'flex.dart';
 import 'widget.dart';
 
 class DecoratedBox extends Widget {
-  final Widget child;
-  final BoxDecoration decoration;
+  final Widget? child;
+  final BoxDecoration? decoration;
 
   const DecoratedBox({
-    Key key,
+    Key? key,
     this.child,
     this.decoration,
   }) : super(key: key);
@@ -27,17 +26,16 @@ class DecoratedBox extends Widget {
     style.display = 'flex';
 
     if (decoration?.color != null) {
-      final color = decoration.color.toCss();
+      final color = decoration!.color!.toCss();
       style.backgroundColor = color;
     } else if (decoration?.image != null) {
-      style.backgroundImage =
-          'url(' + context.resolveUrl(decoration.image.image.url) + ')';
+      style.backgroundImage = 'url(' + context.resolveUrl(decoration!.image!.image.url) + ')';
     }
 
     if (decoration != null) {
-      if (decoration.image?.fit != null) {
+      if (decoration!.image?.fit != null) {
         style.backgroundPosition = 'center';
-        switch (decoration.image.fit) {
+        switch (decoration!.image!.fit) {
           case BoxFit.cover:
             style.backgroundSize = 'cover';
             break;
@@ -55,27 +53,27 @@ class DecoratedBox extends Widget {
             break;
         }
       }
-      final borderRadius = decoration.borderRadius;
+      final borderRadius = decoration!.borderRadius;
       if (borderRadius is BorderRadius) {
         if (borderRadius.topLeft != null) {
-          style.borderTopLeftRadius = '${borderRadius.topLeft.x}px';
+          style.borderTopLeftRadius = '${borderRadius.topLeft!.x}px';
         }
         if (borderRadius.topRight != null) {
-          style.borderTopRightRadius = '${borderRadius.topRight.x}px';
+          style.borderTopRightRadius = '${borderRadius.topRight!.x}px';
         }
         if (borderRadius.bottomLeft != null) {
-          style.borderBottomLeftRadius = '${borderRadius.bottomLeft.x}px';
+          style.borderBottomLeftRadius = '${borderRadius.bottomLeft!.x}px';
         }
         if (borderRadius.bottomRight != null) {
-          style.borderBottomRightRadius = '${borderRadius.bottomRight.x}px';
+          style.borderBottomRightRadius = '${borderRadius.bottomRight!.x}px';
         }
       }
 
-      if (decoration.boxShadow != null && decoration.boxShadow.isNotEmpty) {
-        final shadow = decoration.boxShadow.first;
-        final shadowColor = shadow.color.toCss();
+      if (decoration!.boxShadow != null && decoration!.boxShadow!.isNotEmpty) {
+        final shadow = decoration?.boxShadow?.first;
+        final shadowColor = shadow?.color.toCss();
         style.boxShadow =
-            '${shadow.offset?.dx ?? 0}px ${shadow.offset?.dy ?? 0}px ${shadow.blurRadius ?? 0}px ${shadow.spreadRadius ?? 0}px ${shadowColor};';
+            '${shadow?.offset.dx ?? 0}px ${shadow?.offset.dy ?? 0}px ${shadow?.blurRadius ?? 0}px ${shadow?.spreadRadius ?? 0}px ${shadowColor};';
       }
     }
     return style;

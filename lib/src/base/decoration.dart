@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:math' as math;
-
 import 'package:meta/meta.dart';
 
 import 'border_radius.dart';
@@ -67,6 +65,61 @@ import 'image.dart';
 ///  * [CustomPaint], a widget that lets you draw arbitrary graphics.
 ///  * [Decoration], the base class which lets you define other decorations.
 class BoxDecoration {
+  /// The color to fill in the background of the box.
+  ///
+  /// The color is filled into the [shape] of the box (e.g., either a rectangle,
+  /// potentially with a [borderRadius], or a circle).
+  ///
+  /// This is ignored if [gradient] is non-null.
+  ///
+  /// The [color] is drawn under the [image].
+  final Color? color;
+
+  /// An image to paint above the background [color] or [gradient].
+  ///
+  /// If [shape] is [BoxShape.circle] then the image is clipped to the circle's
+  /// boundary; if [borderRadius] is non-null then the image is clipped to the
+  /// given radii.
+  final DecorationImage? image;
+
+  /// A border to draw above the background [color], [gradient], or [image].
+  ///
+  /// Follows the [shape] and [borderRadius].
+  ///
+  /// Use [Border] objects to describe borders that do not depend on the reading
+  /// direction.
+  ///
+  /// Use [BoxBorder] objects to describe borders that should flip their left
+  /// and right edges based on whether the text is being read left-to-right or
+  /// right-to-left.
+  final BoxBorder? border;
+
+  /// If non-null, the corners of this box are rounded by this [BorderRadius].
+  ///
+  /// Applies only to boxes with rectangular shapes; ignored if [shape] is not
+  /// [BoxShape.rectangle].
+  ///
+  /// {@macro flutter.painting.boxDecoration.clip}
+  final BorderRadiusGeometry? borderRadius;
+
+  /// A list of shadows cast by this box behind the box.
+  ///
+  /// The shadow follows the [shape] of the box.
+  ///
+  /// See also:
+  ///
+  ///  * [kElevationToShadow], for some predefined shadows used in Material
+  ///    Design.
+  ///  * [PhysicalModel], a widget for showing shadows.
+  final List<BoxShadow>? boxShadow;
+
+  /// A gradient to use when filling the box.
+  ///
+  /// If this is specified, [color] has no effect.
+  ///
+  /// The [gradient] is drawn under the [image].
+  final Gradient? gradient;
+
   /// Creates a box decoration.
   ///
   /// * If [color] is null, this decoration does not paint a background color.
@@ -92,81 +145,6 @@ class BoxDecoration {
             'backgroundBlendMode applies to BoxDecoration\'s background color or '
             'gradient, but no color or gradient was provided.');
 
-  /// Creates a copy of this object but with the given fields replaced with the
-  /// new values.
-  BoxDecoration copyWith({
-    Color color,
-    DecorationImage image,
-    BoxBorder border,
-    BorderRadiusGeometry borderRadius,
-    List<BoxShadow> boxShadow,
-    Gradient gradient,
-  }) {
-    return BoxDecoration(
-      color: color ?? this.color,
-      image: image ?? this.image,
-      border: border ?? this.border,
-      borderRadius: borderRadius ?? this.borderRadius,
-      boxShadow: boxShadow ?? this.boxShadow,
-      gradient: gradient ?? this.gradient,
-    );
-  }
-
-  /// The color to fill in the background of the box.
-  ///
-  /// The color is filled into the [shape] of the box (e.g., either a rectangle,
-  /// potentially with a [borderRadius], or a circle).
-  ///
-  /// This is ignored if [gradient] is non-null.
-  ///
-  /// The [color] is drawn under the [image].
-  final Color color;
-
-  /// An image to paint above the background [color] or [gradient].
-  ///
-  /// If [shape] is [BoxShape.circle] then the image is clipped to the circle's
-  /// boundary; if [borderRadius] is non-null then the image is clipped to the
-  /// given radii.
-  final DecorationImage image;
-
-  /// A border to draw above the background [color], [gradient], or [image].
-  ///
-  /// Follows the [shape] and [borderRadius].
-  ///
-  /// Use [Border] objects to describe borders that do not depend on the reading
-  /// direction.
-  ///
-  /// Use [BoxBorder] objects to describe borders that should flip their left
-  /// and right edges based on whether the text is being read left-to-right or
-  /// right-to-left.
-  final BoxBorder border;
-
-  /// If non-null, the corners of this box are rounded by this [BorderRadius].
-  ///
-  /// Applies only to boxes with rectangular shapes; ignored if [shape] is not
-  /// [BoxShape.rectangle].
-  ///
-  /// {@macro flutter.painting.boxDecoration.clip}
-  final BorderRadiusGeometry borderRadius;
-
-  /// A list of shadows cast by this box behind the box.
-  ///
-  /// The shadow follows the [shape] of the box.
-  ///
-  /// See also:
-  ///
-  ///  * [kElevationToShadow], for some predefined shadows used in Material
-  ///    Design.
-  ///  * [PhysicalModel], a widget for showing shadows.
-  final List<BoxShadow> boxShadow;
-
-  /// A gradient to use when filling the box.
-  ///
-  /// If this is specified, [color] has no effect.
-  ///
-  /// The [gradient] is drawn under the [image].
-  final Gradient gradient;
-
   @override
   bool operator ==(dynamic other) {
     if (identical(this, other)) return true;
@@ -179,30 +157,48 @@ class BoxDecoration {
         boxShadow == typedOther.boxShadow &&
         gradient == typedOther.gradient;
   }
+
+  /// Creates a copy of this object but with the given fields replaced with the
+  /// new values.
+  BoxDecoration copyWith({
+    Color? color,
+    DecorationImage? image,
+    BoxBorder? border,
+    BorderRadiusGeometry? borderRadius,
+    List<BoxShadow>? boxShadow,
+    Gradient? gradient,
+  }) {
+    return BoxDecoration(
+      color: color ?? this.color,
+      image: image ?? this.image,
+      border: border ?? this.border,
+      borderRadius: borderRadius ?? this.borderRadius,
+      boxShadow: boxShadow ?? this.boxShadow,
+      gradient: gradient ?? this.gradient,
+    );
+  }
+}
+
+class BoxShadow {
+  final Color color;
+  final Offset offset;
+  final double blurRadius;
+  final double spreadRadius;
+
+  /// Creates a box shadow.
+  ///
+  /// By default, the shadow is solid black with zero [offset], [blurRadius],
+  /// and [spreadRadius].
+  const BoxShadow({
+    this.color = const Color(0xFF000000),
+    this.offset = Offset.zero,
+    this.blurRadius = 0.0,
+    this.spreadRadius = 0.0,
+  });
 }
 
 @immutable
 abstract class Gradient {
-  /// Initialize the gradient's colors and stops.
-  ///
-  /// The [colors] argument must not be null, and must have at least two colors
-  /// (the length is not verified until the [createShader] method is called).
-  ///
-  /// If specified, the [stops] argument must have the same number of entries as
-  /// [colors] (this is also not verified until the [createShader] method is
-  /// called).
-  ///
-  /// The [transform] argument can be applied to transform _only_ the gradient,
-  /// without rotating the canvas itself or other geometry on the canvas. For
-  /// example, a `GradientRotation(math.pi/4)` will result in a [SweepGradient]
-  /// that starts from a position of 6 o'clock instead of 3 o'clock, assuming
-  /// no other rotation or perspective transformations have been applied to the
-  /// [Canvas]. If null, no transformation is applied.
-  const Gradient({
-    @required this.colors,
-    this.stops,
-  }) : assert(colors != null);
-
   /// The colors the gradient should obtain at each of the stops.
   ///
   /// If [stops] is non-null, this list must have the same length as [stops].
@@ -227,23 +223,25 @@ abstract class Gradient {
   ///
   /// If stops is null, then a set of uniformly distributed stops is implied,
   /// with the first stop at 0.0 and the last stop at 1.0.
-  final List<double> stops;
-}
+  final List<double>? stops;
 
-class BoxShadow {
-  final Color color;
-  final Offset offset;
-  final double blurRadius;
-  final double spreadRadius;
-
-  /// Creates a box shadow.
+  /// Initialize the gradient's colors and stops.
   ///
-  /// By default, the shadow is solid black with zero [offset], [blurRadius],
-  /// and [spreadRadius].
-  const BoxShadow({
-    this.color = const Color(0xFF000000),
-    this.offset = Offset.zero,
-    this.blurRadius = 0.0,
-    this.spreadRadius = 0.0,
+  /// The [colors] argument must not be null, and must have at least two colors
+  /// (the length is not verified until the [createShader] method is called).
+  ///
+  /// If specified, the [stops] argument must have the same number of entries as
+  /// [colors] (this is also not verified until the [createShader] method is
+  /// called).
+  ///
+  /// The [transform] argument can be applied to transform _only_ the gradient,
+  /// without rotating the canvas itself or other geometry on the canvas. For
+  /// example, a `GradientRotation(math.pi/4)` will result in a [SweepGradient]
+  /// that starts from a position of 6 o'clock instead of 3 o'clock, assuming
+  /// no other rotation or perspective transformations have been applied to the
+  /// [Canvas]. If null, no transformation is applied.
+  const Gradient({
+    required this.colors,
+    this.stops,
   });
 }

@@ -6,22 +6,10 @@ import 'dart:math' as math;
 
 import 'package:meta/meta.dart';
 
-import 'basic_types.dart';
 import 'color.dart';
 import 'edge_insets.dart';
 import 'hash_values.dart';
 import 'lerp.dart';
-
-/// The style of line to draw for a [BorderSide] in a [Border].
-enum BorderStyle {
-  /// Skip the border.
-  none,
-
-  /// Draw the border as a solid line.
-  solid,
-
-  // if you add more, think about how they will lerp
-}
 
 /// A side of a border of a box.
 ///
@@ -61,46 +49,8 @@ enum BorderStyle {
 ///    of which are also [BorderSide] objects.
 @immutable
 class BorderSide {
-  /// Creates the side of a border.
-  ///
-  /// By default, the border is 1.0 logical pixels wide and solid black.
-  const BorderSide({
-    this.color = const Color(0xFF000000),
-    this.width = 1.0,
-    this.style = BorderStyle.solid,
-  })  : assert(color != null),
-        assert(width != null),
-        assert(width >= 0.0),
-        assert(style != null);
-
-  /// Creates a [BorderSide] that represents the addition of the two given
-  /// [BorderSide]s.
-  ///
-  /// It is only valid to call this if [canMerge] returns true for the two
-  /// sides.
-  ///
-  /// If one of the sides is zero-width with [BorderStyle.none], then the other
-  /// side is return as-is. If both of the sides are zero-width with
-  /// [BorderStyle.none], then [BorderSide.zero] is returned.
-  ///
-  /// The arguments must not be null.
-  static BorderSide merge(BorderSide a, BorderSide b) {
-    assert(a != null);
-    assert(b != null);
-    assert(canMerge(a, b));
-    final bool aIsNone = a.style == BorderStyle.none && a.width == 0.0;
-    final bool bIsNone = b.style == BorderStyle.none && b.width == 0.0;
-    if (aIsNone && bIsNone) return BorderSide.none;
-    if (aIsNone) return b;
-    if (bIsNone) return a;
-    assert(a.color == b.color);
-    assert(a.style == b.style);
-    return BorderSide(
-      color: a.color, // == b.color
-      width: a.width + b.width,
-      style: a.style, // == b.style
-    );
-  }
+  /// A hairline black border that is not rendered.
+  static const BorderSide none = BorderSide(width: 0.0, style: BorderStyle.none);
 
   /// The color of this side of the border.
   final Color color;
@@ -122,15 +72,31 @@ class BorderSide {
   /// painting the border, but the border still has a [width].
   final BorderStyle style;
 
-  /// A hairline black border that is not rendered.
-  static const BorderSide none =
-      BorderSide(width: 0.0, style: BorderStyle.none);
+  /// Creates the side of a border.
+  ///
+  /// By default, the border is 1.0 logical pixels wide and solid black.
+  const BorderSide({
+    this.color = const Color(0xFF000000),
+    this.width = 1.0,
+    this.style = BorderStyle.solid,
+  });
+
+  @override
+  int get hashCode => hashValues(color, width, style);
+
+  @override
+  bool operator ==(dynamic other) {
+    if (identical(this, other)) return true;
+    if (runtimeType != other.runtimeType) return false;
+    final BorderSide typedOther = other;
+    return color == typedOther.color && width == typedOther.width && style == typedOther.style;
+  }
 
   /// Creates a copy of this border but with the given fields replaced with the new values.
   BorderSide copyWith({
-    Color color,
-    double width,
-    BorderStyle style,
+    Color? color,
+    double? width,
+    BorderStyle? style,
   }) {
     assert(width == null || width >= 0.0);
     return BorderSide(
@@ -157,7 +123,6 @@ class BorderSide {
   /// Values for `t` are usually obtained from an [Animation<double>], such as
   /// an [AnimationController].
   BorderSide scale(double t) {
-    assert(t != null);
     return BorderSide(
       color: color,
       width: math.max(0.0, width * t),
@@ -165,7 +130,10 @@ class BorderSide {
     );
   }
 
-  /// Whether the two given [BorderSide]s can be merged using [new
+  @override
+  String toString() => '$runtimeType($color, ${width.toStringAsFixed(1)}, $style)';
+
+  /// Whether the two given [BorderSide]s can be merged using [
   /// BorderSide.merge].
   ///
   /// Two sides can be merged if one or both are zero-width with
@@ -173,8 +141,6 @@ class BorderSide {
   ///
   /// The arguments must not be null.
   static bool canMerge(BorderSide a, BorderSide b) {
-    assert(a != null);
-    assert(b != null);
     if ((a.style == BorderStyle.none && a.width == 0.0) ||
         (b.style == BorderStyle.none && b.width == 0.0)) return true;
     return a.style == b.style && a.color == b.color;
@@ -186,21 +152,18 @@ class BorderSide {
   ///
   /// {@macro dart.ui.shadow.lerp}
   static BorderSide lerp(BorderSide a, BorderSide b, double t) {
-    assert(a != null);
-    assert(b != null);
-    assert(t != null);
     if (t == 0.0) return a;
     if (t == 1.0) return b;
-    final width = lerpDouble(a.width, b.width, t);
+    final width = lerpDouble(a.width, b.width, t)!;
     if (width < 0.0) return BorderSide.none;
     if (a.style == b.style) {
       return BorderSide(
-        color: Color.lerp(a.color, b.color, t),
+        color: Color.lerp(a.color, b.color, t)!,
         width: width,
         style: a.style, // == b.style
       );
     }
-    Color colorA, colorB;
+    Color? colorA, colorB;
     switch (a.style) {
       case BorderStyle.solid:
         colorA = a.color;
@@ -218,28 +181,49 @@ class BorderSide {
         break;
     }
     return BorderSide(
-      color: Color.lerp(colorA, colorB, t),
+      color: Color.lerp(colorA, colorB, t)!,
       width: width,
       style: BorderStyle.solid,
     );
   }
 
-  @override
-  bool operator ==(dynamic other) {
-    if (identical(this, other)) return true;
-    if (runtimeType != other.runtimeType) return false;
-    final BorderSide typedOther = other;
-    return color == typedOther.color &&
-        width == typedOther.width &&
-        style == typedOther.style;
+  /// Creates a [BorderSide] that represents the addition of the two given
+  /// [BorderSide]s.
+  ///
+  /// It is only valid to call this if [canMerge] returns true for the two
+  /// sides.
+  ///
+  /// If one of the sides is zero-width with [BorderStyle.none], then the other
+  /// side is return as-is. If both of the sides are zero-width with
+  /// [BorderStyle.none], then [BorderSide.zero] is returned.
+  ///
+  /// The arguments must not be null.
+  static BorderSide merge(BorderSide a, BorderSide b) {
+    assert(canMerge(a, b));
+    final bool aIsNone = a.style == BorderStyle.none && a.width == 0.0;
+    final bool bIsNone = b.style == BorderStyle.none && b.width == 0.0;
+    if (aIsNone && bIsNone) return BorderSide.none;
+    if (aIsNone) return b;
+    if (bIsNone) return a;
+    assert(a.color == b.color);
+    assert(a.style == b.style);
+    return BorderSide(
+      color: a.color, // == b.color
+      width: a.width + b.width,
+      style: a.style, // == b.style
+    );
   }
+}
 
-  @override
-  int get hashCode => hashValues(color, width, style);
+/// The style of line to draw for a [BorderSide] in a [Border].
+enum BorderStyle {
+  /// Skip the border.
+  none,
 
-  @override
-  String toString() =>
-      '$runtimeType($color, ${width.toStringAsFixed(1)}, $style)';
+  /// Draw the border as a solid line.
+  solid,
+
+  // if you add more, think about how they will lerp
 }
 
 /// Base class for shape outlines.
@@ -278,19 +262,6 @@ abstract class ShapeBorder {
   /// computing their [dimensions].
   EdgeInsetsGeometry get dimensions;
 
-  /// Attempts to create a new object that represents the amalgamation of `this`
-  /// border and the `other` border.
-  ///
-  /// If the type of the other border isn't known, or the given instance cannot
-  /// be reasonably added to this instance, then this should return null.
-  ///
-  /// This method is used by the [operator +] implementation.
-  ///
-  /// The `reversed` argument is true if this object was the right operand of
-  /// the `+` operator, and false if it was the left operand.
-  @protected
-  ShapeBorder add(ShapeBorder other, {bool reversed = false}) => null;
-
   /// Creates a new border consisting of the two borders on either side of the
   /// operator.
   ///
@@ -305,29 +276,18 @@ abstract class ShapeBorder {
         _CompoundBorder(<ShapeBorder>[other, this]);
   }
 
-  /// Creates a copy of this border, scaled by the factor `t`.
+  /// Attempts to create a new object that represents the amalgamation of `this`
+  /// border and the `other` border.
   ///
-  /// Typically this means scaling the width of the border's side, but it can
-  /// also include scaling other artifacts of the border, e.g. the border radius
-  /// of a [RoundedRectangleBorder].
+  /// If the type of the other border isn't known, or the given instance cannot
+  /// be reasonably added to this instance, then this should return null.
   ///
-  /// The `t` argument represents the multiplicand, or the position on the
-  /// timeline for an interpolation from nothing to `this`, with 0.0 meaning
-  /// that the object returned should be the nil variant of this object, 1.0
-  /// meaning that no change should be applied, returning `this` (or something
-  /// equivalent to `this`), and other values meaning that the object should be
-  /// multiplied by `t`. Negative values are allowed but may be meaningless
-  /// (they correspond to extrapolating the interpolation from this object to
-  /// nothing, and going beyond nothing)
+  /// This method is used by the [operator +] implementation.
   ///
-  /// Values for `t` are usually obtained from an [Animation<double>], such as
-  /// an [AnimationController].
-  ///
-  /// See also:
-  ///
-  ///  * [BorderSide.scale], which most [ShapeBorder] subclasses defer to for
-  ///    the actual computation.
-  ShapeBorder scale(double t);
+  /// The `reversed` argument is true if this object was the right operand of
+  /// the `+` operator, and false if it was the left operand.
+  @protected
+  ShapeBorder? add(ShapeBorder other, {bool reversed = false}) => null;
 
   /// Linearly interpolates from another [ShapeBorder] (possibly of another
   /// class) to `this`.
@@ -354,7 +314,7 @@ abstract class ShapeBorder {
   ///
   /// Instead of calling this directly, use [ShapeBorder.lerp].
   @protected
-  ShapeBorder lerpFrom(ShapeBorder a, double t) {
+  ShapeBorder? lerpFrom(ShapeBorder? a, double t) {
     if (a == null) return scale(t);
     return null;
   }
@@ -385,9 +345,38 @@ abstract class ShapeBorder {
   ///
   /// Instead of calling this directly, use [ShapeBorder.lerp].
   @protected
-  ShapeBorder lerpTo(ShapeBorder b, double t) {
+  ShapeBorder? lerpTo(ShapeBorder? b, double t) {
     if (b == null) return scale(1.0 - t);
     return null;
+  }
+
+  /// Creates a copy of this border, scaled by the factor `t`.
+  ///
+  /// Typically this means scaling the width of the border's side, but it can
+  /// also include scaling other artifacts of the border, e.g. the border radius
+  /// of a [RoundedRectangleBorder].
+  ///
+  /// The `t` argument represents the multiplicand, or the position on the
+  /// timeline for an interpolation from nothing to `this`, with 0.0 meaning
+  /// that the object returned should be the nil variant of this object, 1.0
+  /// meaning that no change should be applied, returning `this` (or something
+  /// equivalent to `this`), and other values meaning that the object should be
+  /// multiplied by `t`. Negative values are allowed but may be meaningless
+  /// (they correspond to extrapolating the interpolation from this object to
+  /// nothing, and going beyond nothing)
+  ///
+  /// Values for `t` are usually obtained from an [Animation<double>], such as
+  /// an [AnimationController].
+  ///
+  /// See also:
+  ///
+  ///  * [BorderSide.scale], which most [ShapeBorder] subclasses defer to for
+  ///    the actual computation.
+  ShapeBorder scale(double t);
+
+  @override
+  String toString() {
+    return '$runtimeType()';
   }
 
   /// Linearly interpolates between two [ShapeBorder]s.
@@ -399,16 +388,10 @@ abstract class ShapeBorder {
   ///
   /// {@macro dart.ui.shadow.lerp}
   static ShapeBorder lerp(ShapeBorder a, ShapeBorder b, double t) {
-    assert(t != null);
-    ShapeBorder result;
-    if (b != null) result = b.lerpFrom(a, t);
-    if (result == null && a != null) result = a.lerpTo(b, t);
+    ShapeBorder? result;
+    result = b.lerpFrom(a, t);
+    if (result == null) result = a.lerpTo(b, t);
     return result ?? (t < 0.5 ? a : b);
-  }
-
-  @override
-  String toString() {
-    return '$runtimeType()';
   }
 }
 
@@ -416,12 +399,11 @@ abstract class ShapeBorder {
 ///
 /// The borders are listed from the outside to the inside.
 class _CompoundBorder extends ShapeBorder {
-  _CompoundBorder(this.borders)
-      : assert(borders != null),
-        assert(borders.length >= 2),
-        assert(!borders.any((ShapeBorder border) => border is _CompoundBorder));
-
   final List<ShapeBorder> borders;
+
+  _CompoundBorder(this.borders)
+      : assert(borders.length >= 2),
+        assert(!borders.any((ShapeBorder border) => border is _CompoundBorder));
 
   @override
   EdgeInsetsGeometry get dimensions {
@@ -431,6 +413,22 @@ class _CompoundBorder extends ShapeBorder {
         return previousValue.add(border.dimensions);
       },
     );
+  }
+
+  @override
+  int get hashCode => hashList(borders);
+
+  @override
+  bool operator ==(dynamic other) {
+    if (identical(this, other)) return true;
+    if (runtimeType != other.runtimeType) return false;
+    final _CompoundBorder typedOther = other;
+    if (borders == typedOther.borders) return true;
+    if (borders.length != typedOther.borders.length) return false;
+    for (int index = 0; index < borders.length; index += 1) {
+      if (borders[index] != typedOther.borders[index]) return false;
+    }
+    return true;
   }
 
   @override
@@ -445,8 +443,8 @@ class _CompoundBorder extends ShapeBorder {
       // border, and "merged" is the result of attempting to merge it with the
       // new border. If it's null, it couldn't be merged.
       final ShapeBorder ours = reversed ? borders.last : borders.first;
-      final ShapeBorder merged = ours.add(other, reversed: reversed) ??
-          other.add(ours, reversed: !reversed);
+      final ShapeBorder? merged =
+          ours.add(other, reversed: reversed) ?? other.add(ours, reversed: !reversed);
       if (merged != null) {
         final List<ShapeBorder> result = <ShapeBorder>[...borders];
         result[reversed ? result.length - 1 : 0] = merged;
@@ -463,38 +461,42 @@ class _CompoundBorder extends ShapeBorder {
   }
 
   @override
-  ShapeBorder scale(double t) {
-    return _CompoundBorder(borders
-        .map<ShapeBorder>((ShapeBorder border) => border.scale(t))
-        .toList());
-  }
-
-  @override
-  ShapeBorder lerpFrom(ShapeBorder a, double t) {
+  ShapeBorder lerpFrom(covariant ShapeBorder a, double t) {
     return _CompoundBorder.lerp(a, this, t);
   }
 
   @override
-  ShapeBorder lerpTo(ShapeBorder b, double t) {
+  ShapeBorder lerpTo(covariant ShapeBorder b, double t) {
     return _CompoundBorder.lerp(this, b, t);
   }
 
+  @override
+  ShapeBorder scale(double t) {
+    return _CompoundBorder(
+        borders.map<ShapeBorder>((ShapeBorder border) => border.scale(t)).toList());
+  }
+
+  @override
+  String toString() {
+    // We list them in reverse order because when adding two borders they end up
+    // in the list in the opposite order of what the source looks like: a + b =>
+    // [b, a]. We do this to make the painting code more optimal, and most of
+    // the rest of the code doesn't care, except toString() (for debugging).
+    return borders.reversed.map<String>((ShapeBorder border) => border.toString()).join(' + ');
+  }
+
   static _CompoundBorder lerp(ShapeBorder a, ShapeBorder b, double t) {
-    assert(t != null);
     assert(a is _CompoundBorder ||
         b is _CompoundBorder); // Not really necessary, but all call sites currently intend this.
-    final List<ShapeBorder> aList =
-        a is _CompoundBorder ? a.borders : <ShapeBorder>[a];
-    final List<ShapeBorder> bList =
-        b is _CompoundBorder ? b.borders : <ShapeBorder>[b];
+    final List<ShapeBorder> aList = a is _CompoundBorder ? a.borders : <ShapeBorder>[a];
+    final List<ShapeBorder> bList = b is _CompoundBorder ? b.borders : <ShapeBorder>[b];
     final List<ShapeBorder> results = <ShapeBorder>[];
     final int length = math.max(aList.length, bList.length);
     for (int index = 0; index < length; index += 1) {
-      final ShapeBorder localA = index < aList.length ? aList[index] : null;
-      final ShapeBorder localB = index < bList.length ? bList[index] : null;
+      final ShapeBorder? localA = index < aList.length ? aList[index] : null;
+      final ShapeBorder? localB = index < bList.length ? bList[index] : null;
       if (localA != null && localB != null) {
-        final ShapeBorder localResult =
-            localA.lerpTo(localB, t) ?? localB.lerpFrom(localA, t);
+        final ShapeBorder? localResult = localA.lerpTo(localB, t) ?? localB.lerpFrom(localA, t);
         if (localResult != null) {
           results.add(localResult);
           continue;
@@ -508,32 +510,5 @@ class _CompoundBorder extends ShapeBorder {
       if (localA != null) results.add(localA.scale(1.0 - t));
     }
     return _CompoundBorder(results);
-  }
-
-  @override
-  bool operator ==(dynamic other) {
-    if (identical(this, other)) return true;
-    if (runtimeType != other.runtimeType) return false;
-    final _CompoundBorder typedOther = other;
-    if (borders == typedOther.borders) return true;
-    if (borders.length != typedOther.borders.length) return false;
-    for (int index = 0; index < borders.length; index += 1) {
-      if (borders[index] != typedOther.borders[index]) return false;
-    }
-    return true;
-  }
-
-  @override
-  int get hashCode => hashList(borders);
-
-  @override
-  String toString() {
-    // We list them in reverse order because when adding two borders they end up
-    // in the list in the opposite order of what the source looks like: a + b =>
-    // [b, a]. We do this to make the painting code more optimal, and most of
-    // the rest of the code doesn't care, except toString() (for debugging).
-    return borders.reversed
-        .map<String>((ShapeBorder border) => border.toString())
-        .join(' + ');
   }
 }

@@ -7,15 +7,15 @@ import 'package:bluff/src/widgets/sized_box.dart';
 import 'padding.dart';
 
 class Container extends StatelessWidget {
-  final Widget child;
-  final double width;
-  final double height;
-  final BoxDecoration decoration;
-  final EdgeInsets padding;
-  final BoxConstraints constraints;
+  final Widget? child;
+  final double? width;
+  final double? height;
+  final BoxDecoration? decoration;
+  final EdgeInsets? padding;
+  final BoxConstraints? constraints;
 
   const Container({
-    Key key,
+    Key? key,
     this.width,
     this.height,
     this.decoration,

@@ -2,16 +2,14 @@ import 'dart:async';
 
 import 'package:bluff/src/base/basic_types.dart';
 import 'package:bluff/src/base/keys.dart';
-import 'package:universal_html/prefer_universal/html.dart' as html;
+import 'package:universal_html/html.dart' as html;
 
 import '../build_context.dart';
-import 'package:meta/meta.dart';
-
 import 'widget.dart';
 
 class Column extends Flex {
   const Column({
-    Key key,
+    Key? key,
     MainAxisAlignment mainAxisAlignment = MainAxisAlignment.start,
     MainAxisSize mainAxisSize = MainAxisSize.min,
     CrossAxisAlignment crossAxisAlignment = CrossAxisAlignment.center,
@@ -27,21 +25,72 @@ class Column extends Flex {
         );
 }
 
-class Row extends Flex {
-  const Row({
-    Key key,
-    MainAxisAlignment mainAxisAlignment = MainAxisAlignment.start,
-    MainAxisSize mainAxisSize = MainAxisSize.min,
-    CrossAxisAlignment crossAxisAlignment = CrossAxisAlignment.center,
-    VerticalDirection verticalDirection = VerticalDirection.down,
-    List<Widget> children = const <Widget>[],
+/// How the children should be placed along the cross axis in a flex layout.
+///
+/// See also:
+///
+///  * [Column], [Row], and [Flex], the flex widgets.
+///  * [RenderFlex], the flex render object.
+enum CrossAxisAlignment {
+  /// Place the children with their start edge aligned with the start side of
+  /// the cross axis.
+  ///
+  /// For example, in a column (a flex with a vertical axis) whose
+  /// [TextDirection] is [TextDirection.ltr], this aligns the left edge of the
+  /// children along the left edge of the column.
+  ///
+  /// If this value is used in a horizontal direction, a [TextDirection] must be
+  /// available to determine if the start is the left or the right.
+  ///
+  /// If this value is used in a vertical direction, a [VerticalDirection] must be
+  /// available to determine if the start is the top or the bottom.
+  start,
+
+  /// Place the children as close to the end of the cross axis as possible.
+  ///
+  /// For example, in a column (a flex with a vertical axis) whose
+  /// [TextDirection] is [TextDirection.ltr], this aligns the right edge of the
+  /// children along the right edge of the column.
+  ///
+  /// If this value is used in a horizontal direction, a [TextDirection] must be
+  /// available to determine if the end is the left or the right.
+  ///
+  /// If this value is used in a vertical direction, a [VerticalDirection] must be
+  /// available to determine if the end is the top or the bottom.
+  end,
+
+  /// Place the children so that their centers align with the middle of the
+  /// cross axis.
+  ///
+  /// This is the default cross-axis alignment.
+  center,
+
+  /// Require the children to fill the cross axis.
+  ///
+  /// This causes the constraints passed to the children to be tight in the
+  /// cross axis.
+  stretch,
+
+  /// Place the children along the cross axis such that their baselines match.
+  ///
+  /// If the main axis is vertical, then this value is treated like [start]
+  /// (since baselines are always horizontal).
+  baseline,
+}
+
+class Expanded extends Flexible {
+  /// Creates a widget that expands a child of a [Row], [Column], or [Flex]
+  /// so that the child fills the available space along the flex widget's
+  /// main axis.
+  const Expanded({
+    Key? key,
+    int flex = 1,
+    required Widget? child,
   }) : super(
           key: key,
-          direction: Axis.horizontal,
-          mainAxisAlignment: mainAxisAlignment,
-          mainAxisSize: mainAxisSize,
-          crossAxisAlignment: crossAxisAlignment,
-          children: children,
+          flex: flex,
+          fit: FlexFit.tight,
+          child: child,
         );
 }
 
@@ -53,8 +102,8 @@ class Flex extends Widget {
   final List<Widget> children;
 
   const Flex({
-    Key key,
-    @required this.direction,
+    Key? key,
+    required this.direction,
     this.mainAxisAlignment = MainAxisAlignment.start,
     this.mainAxisSize = MainAxisSize.max,
     this.crossAxisAlignment = CrossAxisAlignment.center,
@@ -64,17 +113,10 @@ class Flex extends Widget {
   @override
   FutureOr<html.HtmlElement> render(BuildContext context) async {
     final result = await super.render(context);
-    if (children != null) {
-      for (var child in children) {
-        result.childNodes.add(await child.render(context));
-      }
+    for (var child in children) {
+      result.childNodes.add(await child.render(context));
     }
     return result;
-  }
-
-  @override
-  FutureOr<html.HtmlElement> renderHtml(BuildContext context) {
-    return html.DivElement();
   }
 
   @override
@@ -132,71 +174,11 @@ class Flex extends Widget {
 
     return style;
   }
-}
-
-class Flexible extends Widget {
-  final Widget child;
-
-  /// The flex factor to use for this child
-  ///
-  /// If null or zero, the child is inflexible and determines its own size. If
-  /// non-zero, the amount of space the child's can occupy in the main axis is
-  /// determined by dividing the free space (after placing the inflexible
-  /// children) according to the flex factors of the flexible children.
-  final int flex;
-
-  /// How a flexible child is inscribed into the available space.
-  ///
-  /// If [flex] is non-zero, the [fit] determines whether the child fills the
-  /// space the parent makes available during layout. If the fit is
-  /// [FlexFit.tight], the child is required to fill the available space. If the
-  /// fit is [FlexFit.loose], the child can be at most as large as the available
-  /// space (but is allowed to be smaller).
-  final FlexFit fit;
-
-  const Flexible({
-    Key key,
-    this.flex = 1,
-    this.fit = FlexFit.loose,
-    @required this.child,
-  }) : super(
-          key: key,
-        );
 
   @override
   FutureOr<html.HtmlElement> renderHtml(BuildContext context) {
-    return child.render(context);
+    return html.DivElement();
   }
-
-  @override
-  FutureOr<html.CssStyleDeclaration> renderCss(BuildContext context) {
-    final style = html.DivElement().style;
-    if (fit == FlexFit.tight) {
-      style.flexGrow = flex.toString();
-      style.flexShrink = '1';
-      style.flexBasis = '0';
-    } else {
-      style.flexGrow = '0';
-      style.flexShrink = flex.toString();
-    }
-    return style;
-  }
-}
-
-class Expanded extends Flexible {
-  /// Creates a widget that expands a child of a [Row], [Column], or [Flex]
-  /// so that the child fills the available space along the flex widget's
-  /// main axis.
-  const Expanded({
-    Key key,
-    int flex = 1,
-    @required Widget child,
-  }) : super(
-          key: key,
-          flex: flex,
-          fit: FlexFit.tight,
-          child: child,
-        );
 }
 
 /// How the child is inscribed into the available space.
@@ -218,6 +200,55 @@ enum FlexFit {
   ///
   /// The [Flexible] widget assigns this kind of [FlexFit] to its child.
   loose,
+}
+
+class Flexible extends Widget {
+  final Widget? child;
+
+  /// The flex factor to use for this child
+  ///
+  /// If null or zero, the child is inflexible and determines its own size. If
+  /// non-zero, the amount of space the child's can occupy in the main axis is
+  /// determined by dividing the free space (after placing the inflexible
+  /// children) according to the flex factors of the flexible children.
+  final int flex;
+
+  /// How a flexible child is inscribed into the available space.
+  ///
+  /// If [flex] is non-zero, the [fit] determines whether the child fills the
+  /// space the parent makes available during layout. If the fit is
+  /// [FlexFit.tight], the child is required to fill the available space. If the
+  /// fit is [FlexFit.loose], the child can be at most as large as the available
+  /// space (but is allowed to be smaller).
+  final FlexFit fit;
+
+  const Flexible({
+    Key? key,
+    this.flex = 1,
+    this.fit = FlexFit.loose,
+    required this.child,
+  }) : super(
+          key: key,
+        );
+
+  @override
+  FutureOr<html.CssStyleDeclaration> renderCss(BuildContext context) {
+    final style = html.DivElement().style;
+    if (fit == FlexFit.tight) {
+      style.flexGrow = flex.toString();
+      style.flexShrink = '1';
+      style.flexBasis = '0';
+    } else {
+      style.flexGrow = '0';
+      style.flexShrink = flex.toString();
+    }
+    return style;
+  }
+
+  @override
+  FutureOr<html.HtmlElement> renderHtml(BuildContext context) {
+    return child!.render(context);
+  }
 }
 
 /// How the children should be placed along the main axis in a flex layout.
@@ -260,59 +291,6 @@ enum MainAxisAlignment {
   spaceEvenly,
 }
 
-/// How the children should be placed along the cross axis in a flex layout.
-///
-/// See also:
-///
-///  * [Column], [Row], and [Flex], the flex widgets.
-///  * [RenderFlex], the flex render object.
-enum CrossAxisAlignment {
-  /// Place the children with their start edge aligned with the start side of
-  /// the cross axis.
-  ///
-  /// For example, in a column (a flex with a vertical axis) whose
-  /// [TextDirection] is [TextDirection.ltr], this aligns the left edge of the
-  /// children along the left edge of the column.
-  ///
-  /// If this value is used in a horizontal direction, a [TextDirection] must be
-  /// available to determine if the start is the left or the right.
-  ///
-  /// If this value is used in a vertical direction, a [VerticalDirection] must be
-  /// available to determine if the start is the top or the bottom.
-  start,
-
-  /// Place the children as close to the end of the cross axis as possible.
-  ///
-  /// For example, in a column (a flex with a vertical axis) whose
-  /// [TextDirection] is [TextDirection.ltr], this aligns the right edge of the
-  /// children along the right edge of the column.
-  ///
-  /// If this value is used in a horizontal direction, a [TextDirection] must be
-  /// available to determine if the end is the left or the right.
-  ///
-  /// If this value is used in a vertical direction, a [VerticalDirection] must be
-  /// available to determine if the end is the top or the bottom.
-  end,
-
-  /// Place the children so that their centers align with the middle of the
-  /// cross axis.
-  ///
-  /// This is the default cross-axis alignment.
-  center,
-
-  /// Require the children to fill the cross axis.
-  ///
-  /// This causes the constraints passed to the children to be tight in the
-  /// cross axis.
-  stretch,
-
-  /// Place the children along the cross axis such that their baselines match.
-  ///
-  /// If the main axis is vertical, then this value is treated like [start]
-  /// (since baselines are always horizontal).
-  baseline,
-}
-
 /// How much space should be occupied in the main axis.
 ///
 /// During a flex layout, available space along the main axis is allocated to
@@ -352,4 +330,22 @@ enum MainAxisSize {
   /// assert, because there would be infinite remaining free space and boxes
   /// cannot be given infinite size.
   max,
+}
+
+class Row extends Flex {
+  const Row({
+    Key? key,
+    MainAxisAlignment mainAxisAlignment = MainAxisAlignment.start,
+    MainAxisSize mainAxisSize = MainAxisSize.min,
+    CrossAxisAlignment crossAxisAlignment = CrossAxisAlignment.center,
+    VerticalDirection verticalDirection = VerticalDirection.down,
+    List<Widget> children = const <Widget>[],
+  }) : super(
+          key: key,
+          direction: Axis.horizontal,
+          mainAxisAlignment: mainAxisAlignment,
+          mainAxisSize: mainAxisSize,
+          crossAxisAlignment: crossAxisAlignment,
+          children: children,
+        );
 }

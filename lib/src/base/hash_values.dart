@@ -2,28 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-class _HashEnd {
-  const _HashEnd();
-}
-
 const _HashEnd _hashEnd = _HashEnd();
 
-/// Jenkins hash function, optimized for small integers.
-//
-// Borrowed from the dart sdk: sdk/lib/math/jenkins_smi_hash.dart.
-class _Jenkins {
-  static int combine(int hash, Object o) {
-    assert(o is! Iterable);
-    hash = 0x1fffffff & (hash + o.hashCode);
-    hash = 0x1fffffff & (hash + ((0x0007ffff & hash) << 10));
-    return hash ^ (hash >> 6);
+/// Combine the [Object.hashCode] values of an arbitrary number of objects from
+/// an [Iterable] into one value. This function will return the same value if
+/// given null as if given an empty list.
+int hashList(Iterable<Object>? arguments) {
+  int result = 0;
+  if (arguments != null) {
+    for (Object argument in arguments) result = _Jenkins.combine(result, argument);
   }
-
-  static int finish(int hash) {
-    hash = 0x1fffffff & (hash + ((0x03ffffff & hash) << 3));
-    hash = hash ^ (hash >> 11);
-    return 0x1fffffff & (hash + ((0x00003fff & hash) << 15));
-  }
+  return _Jenkins.finish(result);
 }
 
 /// Combine up to twenty objects' hash codes into one value.
@@ -40,19 +29,19 @@ class _Jenkins {
 /// ```dart
 /// int hashCode => hashValues(foo, bar, hashList(quux), baz);
 /// ```
-int hashValues(Object arg01, Object arg02,
-    [Object arg03 = _hashEnd,
-    Object arg04 = _hashEnd,
-    Object arg05 = _hashEnd,
-    Object arg06 = _hashEnd,
-    Object arg07 = _hashEnd,
-    Object arg08 = _hashEnd,
-    Object arg09 = _hashEnd,
-    Object arg10 = _hashEnd,
-    Object arg11 = _hashEnd,
-    Object arg12 = _hashEnd,
-    Object arg13 = _hashEnd,
-    Object arg14 = _hashEnd,
+int hashValues(Object? arg01, Object? arg02,
+    [Object? arg03 = _hashEnd,
+    Object? arg04 = _hashEnd,
+    Object? arg05 = _hashEnd,
+    Object? arg06 = _hashEnd,
+    Object? arg07 = _hashEnd,
+    Object? arg08 = _hashEnd,
+    Object? arg09 = _hashEnd,
+    Object? arg10 = _hashEnd,
+    Object? arg11 = _hashEnd,
+    Object? arg12 = _hashEnd,
+    Object? arg13 = _hashEnd,
+    Object? arg14 = _hashEnd,
     Object arg15 = _hashEnd,
     Object arg16 = _hashEnd,
     Object arg17 = _hashEnd,
@@ -120,14 +109,24 @@ int hashValues(Object arg01, Object arg02,
   return _Jenkins.finish(result);
 }
 
-/// Combine the [Object.hashCode] values of an arbitrary number of objects from
-/// an [Iterable] into one value. This function will return the same value if
-/// given null as if given an empty list.
-int hashList(Iterable<Object> arguments) {
-  int result = 0;
-  if (arguments != null) {
-    for (Object argument in arguments)
-      result = _Jenkins.combine(result, argument);
+class _HashEnd {
+  const _HashEnd();
+}
+
+/// Jenkins hash function, optimized for small integers.
+//
+// Borrowed from the dart sdk: sdk/lib/math/jenkins_smi_hash.dart.
+class _Jenkins {
+  static int combine(int hash, Object? o) {
+    assert(o is! Iterable);
+    hash = 0x1fffffff & (hash + o.hashCode);
+    hash = 0x1fffffff & (hash + ((0x0007ffff & hash) << 10));
+    return hash ^ (hash >> 6);
   }
-  return _Jenkins.finish(result);
+
+  static int finish(int hash) {
+    hash = 0x1fffffff & (hash + ((0x03ffffff & hash) << 3));
+    hash = hash ^ (hash >> 11);
+    return 0x1fffffff & (hash + ((0x00003fff & hash) << 15));
+  }
 }

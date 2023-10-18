@@ -1,17 +1,10 @@
 import 'dart:async';
 
 import 'package:bluff/src/base/keys.dart';
-import 'package:meta/meta.dart';
-import 'package:universal_html/prefer_universal/html.dart' as html;
+import 'package:universal_html/html.dart' as html;
 
 import '../build_context.dart';
 import 'widget.dart';
-
-enum ClickState {
-  inactive,
-  hover,
-  active,
-}
 
 class Click extends Widget {
   final String url;
@@ -19,14 +12,11 @@ class Click extends Widget {
   final bool newTab;
 
   Click({
-    Key key,
+    Key? key,
     this.newTab = false,
-    @required this.url,
-    @required this.builder,
-  })  : assert(url != null),
-        assert(builder != null),
-        assert(newTab != null),
-        super(
+    required this.url,
+    required this.builder,
+  }) : super(
           key: key,
         );
 
@@ -40,8 +30,7 @@ class Click extends Widget {
       result.target = '_blank';
     }
 
-    final inactive =
-        await builder(context, ClickState.inactive).render(context);
+    final inactive = await builder(context, ClickState.inactive).render(context);
     final active = await builder(context, ClickState.active).render(context);
     final hover = await builder(context, ClickState.hover).render(context);
 
@@ -55,4 +44,10 @@ class Click extends Widget {
 
     return result;
   }
+}
+
+enum ClickState {
+  inactive,
+  hover,
+  active,
 }

@@ -1,6 +1,4 @@
 import 'package:bluff/bluff.dart';
-import 'package:bluff/src/base/keys.dart';
-import 'package:meta/meta.dart';
 
 typedef ProviderCreator<T> = T Function(BuildContext context);
 
@@ -9,14 +7,10 @@ class Provider<T> extends StatelessWidget {
   final Widget child;
 
   const Provider({
-    Key key,
-    @required this.create,
-    @required this.child,
+    Key? key,
+    required this.create,
+    required this.child,
   }) : super(key: key);
-
-  static T of<T>(BuildContext context) {
-    return ValueProvider.of<T>(context);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,24 +19,27 @@ class Provider<T> extends StatelessWidget {
       child: child,
     );
   }
+
+  static T of<T>(BuildContext context) {
+    return ValueProvider.of<T>(context);
+  }
 }
 
 class ValueProvider<T> extends InheritedWidget {
   final T value;
 
-  static T of<T>(BuildContext context) {
-    final provider =
-        context.dependOnInheritedWidgetOfExactType<ValueProvider<T>>();
-    assert(provider != null);
-    return provider.value;
-  }
-
   ValueProvider({
-    Key key,
-    @required Widget child,
-    @required this.value,
+    Key? key,
+    required Widget child,
+    required this.value,
   }) : super(
           key: key,
           child: child,
         );
+
+  static T of<T>(BuildContext context) {
+    final provider = context.dependOnInheritedWidgetOfExactType<ValueProvider<T>>();
+    assert(provider != null);
+    return provider!.value;
+  }
 }

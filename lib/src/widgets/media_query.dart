@@ -8,15 +8,15 @@ class MediaQuery extends InheritedWidget {
   final MediaQueryData data;
 
   const MediaQuery({
-    Key key,
-    @required Widget child,
-    @required this.data,
+    Key? key,
+    required Widget child,
+    required this.data,
   }) : super(
           key: key,
           child: child,
         );
 
-  static MediaQueryData of(BuildContext context) {
+  static MediaQueryData? of(BuildContext context) {
     return context.dependOnInheritedWidgetOfExactType<MediaQuery>()?.data;
   }
 }
@@ -26,7 +26,7 @@ class MediaQueryData {
   final MediaSize size;
 
   MediaQueryData({
-    @required this.size,
+    required this.size,
   });
 }
 

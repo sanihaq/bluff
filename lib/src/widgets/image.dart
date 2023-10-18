@@ -1,52 +1,31 @@
 import 'dart:async';
 
 import 'package:bluff/bluff.dart';
-import 'package:bluff/src/base/keys.dart';
-import 'package:meta/meta.dart';
-import 'package:universal_html/prefer_universal/html.dart' as html;
-
-import '../build_context.dart';
-import 'widget.dart';
+import 'package:universal_html/html.dart' as html;
 
 class Image extends Widget {
   final ImageProvider image;
-  final double width;
-  final double height;
-  final BoxFit fit;
-  final String semanticsLabel;
+  final double? width;
+  final double? height;
+  final BoxFit? fit;
+  final String? semanticsLabel;
 
   const Image({
-    Key key,
+    Key? key,
     this.fit = BoxFit.cover,
-    @required this.image,
+    required this.image,
     this.width,
     this.height,
     this.semanticsLabel,
   }) : super(key: key);
 
-  Image.network(
-    String url, {
-    Key key,
-    BoxFit fit = BoxFit.cover,
-    double width,
-    double height,
-    String semanticsLabel,
-  }) : this(
-          key: key,
-          fit: fit,
-          width: width,
-          height: height,
-          semanticsLabel: semanticsLabel,
-          image: ImageProvider.network(url),
-        );
-
   Image.asset(
     String name, {
-    Key key,
+    Key? key,
     BoxFit fit = BoxFit.cover,
-    double width,
-    double height,
-    String semanticsLabel,
+    double? width,
+    double? height,
+    String? semanticsLabel,
   }) : this(
           key: key,
           fit: fit,
@@ -54,6 +33,22 @@ class Image extends Widget {
           height: height,
           semanticsLabel: semanticsLabel,
           image: ImageProvider.asset(name),
+        );
+
+  Image.network(
+    String url, {
+    Key? key,
+    BoxFit fit = BoxFit.cover,
+    double? width,
+    double? height,
+    String? semanticsLabel,
+  }) : this(
+          key: key,
+          fit: fit,
+          width: width,
+          height: height,
+          semanticsLabel: semanticsLabel,
+          image: ImageProvider.network(url),
         );
 
   @override

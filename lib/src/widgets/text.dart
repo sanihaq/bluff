@@ -1,42 +1,14 @@
-import 'dart:async';
-
 import 'package:bluff/src/base/color.dart';
 import 'package:bluff/src/base/keys.dart';
 import 'package:bluff/src/base/locale.dart';
 import 'package:bluff/src/base/text.dart';
 import 'package:bluff/src/build_context.dart';
 import 'package:bluff/src/widgets/theme.dart';
-import 'package:meta/meta.dart';
-
-import 'package:universal_html/prefer_universal/html.dart' as html;
+import 'package:universal_html/html.dart' as html;
 
 import 'widget.dart';
 
 class Text extends Widget {
-  /// Creates a text widget.
-  ///
-  /// If the [style] argument is null, the text will use the style from the
-  /// closest enclosing [DefaultTextStyle].
-  ///
-  /// The [data] parameter must not be null.
-  const Text(
-    this.data, {
-    Key key,
-    this.style,
-    this.strutStyle,
-    this.textAlign,
-    this.textDirection,
-    this.locale,
-    this.softWrap,
-    this.overflow,
-    this.textScaleFactor,
-    this.maxLines,
-  })  : assert(
-          data != null,
-          'A non-null String must be provided to a Text widget.',
-        ),
-        super(key: key);
-
   /// The text to display.
   ///
   /// This will be null if a [textSpan] is provided instead.
@@ -47,13 +19,13 @@ class Text extends Widget {
   /// If the style's "inherit" property is true, the style will be merged with
   /// the closest enclosing [DefaultTextStyle]. Otherwise, the style will
   /// replace the closest enclosing [DefaultTextStyle].
-  final TextStyle style;
+  final TextStyle? style;
 
   /// {@macro flutter.painting.textPainter.strutStyle}
-  final StrutStyle strutStyle;
+  final StrutStyle? strutStyle;
 
   /// How the text should be aligned horizontally.
-  final TextAlign textAlign;
+  final TextAlign? textAlign;
 
   /// The directionality of the text.
   ///
@@ -68,7 +40,7 @@ class Text extends Widget {
   /// its left.
   ///
   /// Defaults to the ambient [Directionality], if any.
-  final TextDirection textDirection;
+  final TextDirection? textDirection;
 
   /// Used to select a font when the same Unicode character can
   /// be rendered differently, depending on the locale.
@@ -77,15 +49,15 @@ class Text extends Widget {
   /// is inherited from the enclosing app with `Localizations.localeOf(context)`.
   ///
   /// See [RenderParagraph.locale] for more information.
-  final Locale locale;
+  final Locale? locale;
 
   /// Whether the text should break at soft line breaks.
   ///
   /// If false, the glyphs in the text will be positioned as if there was unlimited horizontal space.
-  final bool softWrap;
+  final bool? softWrap;
 
   /// How visual overflow should be handled.
-  final TextOverflow overflow;
+  final TextOverflow? overflow;
 
   /// The number of font pixels for each logical pixel.
   ///
@@ -95,7 +67,7 @@ class Text extends Widget {
   /// The value given to the constructor as textScaleFactor. If null, will
   /// use the [MediaQueryData.textScaleFactor] obtained from the ambient
   /// [MediaQuery], or 1.0 if there is no [MediaQuery] in scope.
-  final double textScaleFactor;
+  final double? textScaleFactor;
 
   /// An optional maximum number of lines for the text to span, wrapping if necessary.
   /// If the text exceeds the given number of lines, it will be truncated according
@@ -108,25 +80,27 @@ class Text extends Widget {
   /// an explicit number for its [DefaultTextStyle.maxLines], then the
   /// [DefaultTextStyle] value will take precedence. You can use a [RichText]
   /// widget directly to entirely override the [DefaultTextStyle].
-  final int maxLines;
+  final int? maxLines;
 
-  @override
-  html.HtmlElement renderHtml(BuildContext context) {
-    final result = html.ParagraphElement();
-    final lines = data.split('\n');
-
-    result.childNodes.addAll([
-      html.Text(lines.first),
-      if (lines.length > 1)
-        ...lines.skip(1).expand(
-              (x) => [
-                html.BRElement(),
-                html.Text(x),
-              ],
-            ),
-    ]);
-    return result;
-  }
+  /// Creates a text widget.
+  ///
+  /// If the [style] argument is null, the text will use the style from the
+  /// closest enclosing [DefaultTextStyle].
+  ///
+  /// The [data] parameter must not be null.
+  const Text(
+    this.data, {
+    Key? key,
+    this.style,
+    this.strutStyle,
+    this.textAlign,
+    this.textDirection,
+    this.locale,
+    this.softWrap,
+    this.overflow,
+    this.textScaleFactor,
+    this.maxLines,
+  }) : super(key: key);
 
   @override
   html.CssStyleDeclaration renderCss(BuildContext context) {
@@ -167,11 +141,28 @@ class Text extends Widget {
       8: '900',
     }[textStyles.fontWeight?.index ?? FontWeight.w400.index];
     style.fontFamily = <String>[
-      if (textStyles.fontFamily != null) "'" + textStyles.fontFamily + "'",
-      if (textStyles.fontFamilyFallback != null)
-        ...textStyles.fontFamilyFallback
+      if (textStyles.fontFamily != null) "'" + textStyles.fontFamily! + "'",
+      if (textStyles.fontFamilyFallback != null) ...textStyles.fontFamilyFallback!
     ].join(', ');
 
     return style;
+  }
+
+  @override
+  html.HtmlElement renderHtml(BuildContext context) {
+    final result = html.ParagraphElement();
+    final lines = data.split('\n');
+
+    result.childNodes.addAll([
+      html.Text(lines.first),
+      if (lines.length > 1)
+        ...lines.skip(1).expand(
+              (x) => [
+                html.BRElement(),
+                html.Text(x),
+              ],
+            ),
+    ]);
+    return result;
   }
 }

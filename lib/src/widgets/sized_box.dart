@@ -1,18 +1,18 @@
 import 'dart:async';
 
 import 'package:bluff/src/base/keys.dart';
-import 'package:universal_html/prefer_universal/html.dart' as html;
+import 'package:universal_html/html.dart' as html;
 
 import '../build_context.dart';
 import 'widget.dart';
 
 class SizedBox extends Widget {
-  final Widget child;
-  final double width;
-  final double height;
+  final Widget? child;
+  final double? width;
+  final double? height;
 
   const SizedBox({
-    Key key,
+    Key? key,
     this.child,
     this.width,
     this.height,
@@ -32,6 +32,6 @@ class SizedBox extends Widget {
     if (child == null) {
       return html.DivElement();
     }
-    return child.render(context);
+    return child!.render(context);
   }
 }

@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:bluff/src/base/text.dart';
-import 'package:meta/meta.dart';
 
 import '../build_context.dart';
 import 'click.dart';
@@ -12,13 +11,13 @@ class TextLink extends StatelessWidget {
   final String url;
   final String title;
   final TextStyle inactiveStyle;
-  final TextStyle activeStyle;
-  final TextStyle hoverStyle;
+  final TextStyle? activeStyle;
+  final TextStyle? hoverStyle;
 
   TextLink(
-      {@required this.url,
-      @required this.title,
-      @required this.inactiveStyle,
+      {required this.url,
+      required this.title,
+      required this.inactiveStyle,
       this.activeStyle,
       this.hoverStyle});
 

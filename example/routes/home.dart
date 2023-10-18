@@ -1,9 +1,8 @@
 import 'package:bluff/bluff.dart';
-import 'package:bluff/src/widgets/theme.dart';
 
 final homeRoute = Route(
   title: (context) {
-    final locale = Localizations.localeOf(context);
+    final locale = Localizations.localeOf(context)!;
     if (locale.languageCode == 'fr') return 'Accueil';
     return 'Home';
   },
@@ -14,15 +13,13 @@ final homeRoute = Route(
 class Home extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final mediaQuery = MediaQuery.of(context);
+    final mediaQuery = MediaQuery.of(context)!;
     final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         Flex(
-          direction: mediaQuery.size == MediaSize.small
-              ? Axis.vertical
-              : Axis.horizontal,
+          direction: mediaQuery.size == MediaSize.small ? Axis.vertical : Axis.horizontal,
           children: <Widget>[
             Expanded(
               child: Container(

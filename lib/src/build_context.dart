@@ -1,5 +1,5 @@
 import 'package:bluff/src/widgets/widget.dart';
-import 'package:universal_html/prefer_universal/html.dart' as html;
+import 'package:universal_html/html.dart' as html;
 import 'package:path/path.dart' as path;
 
 import 'assets.dart';
@@ -10,11 +10,11 @@ class BuildContext {
   static int lastKeyIndex = 0;
   final Map<Type, InheritedWidget> _inheritedWidgets = {};
   final Map<String, html.CssStyleDeclaration> styles;
-  final Assets assets;
+  final Assets? assets;
 
   BuildContext({
     this.assets,
-    Map<String, html.CssStyleDeclaration> styles,
+    Map<String, html.CssStyleDeclaration>? styles,
   }) : styles = styles ?? <String, html.CssStyleDeclaration>{};
 
   BuildContext withInherited(InheritedWidget widget) {
@@ -29,21 +29,21 @@ class BuildContext {
 
   Key createDefaultKey() => Key('_w${lastKeyIndex++}');
 
-  T dependOnInheritedWidgetOfExactType<T extends InheritedWidget>() {
+  T? dependOnInheritedWidgetOfExactType<T extends InheritedWidget?>() {
     assert(
       _inheritedWidgets.containsKey(T),
       'No inherited widget with type $T found in tree',
     );
-    return _inheritedWidgets[T];
+    return _inheritedWidgets[T] as T?;
   }
 
   String resolveUrl(String url) {
     if (url.startsWith('asset://')) {
-      return path.join(assets.local.path, url.replaceAll('asset://', ''));
+      return path.join(assets!.local.path, url.replaceAll('asset://', ''));
     }
 
     if (url.startsWith('#')) {
-      final media = MediaQuery.of(this);
+      final media = MediaQuery.of(this)!;
       return url + '-${media.size.index}';
     }
 

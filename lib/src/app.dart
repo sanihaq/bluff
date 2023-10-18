@@ -1,42 +1,15 @@
 import 'dart:async';
+
 import 'package:bluff/src/base/locale.dart';
 import 'package:bluff/src/widgets/localizations.dart';
-
-import 'package:meta/meta.dart';
-import 'package:universal_html/prefer_universal/html.dart' as html;
+import 'package:universal_html/html.dart' as html;
 
 import 'build_context.dart';
 import 'helpers/css_base.dart';
 import 'helpers/css_reset.dart';
+import 'widgets/media_query.dart';
 import 'widgets/theme.dart';
 import 'widgets/widget.dart';
-import 'widgets/media_query.dart';
-
-typedef PostRenderAction = void Function(
-  BuildContext context,
-  html.HtmlHtmlElement html,
-);
-
-class Breakpoint {
-  final int minSize;
-  final MediaSize size;
-  const Breakpoint(this.size, this.minSize);
-
-  static Breakpoint defaultBreakpoint(MediaSize size) {
-    switch (size) {
-      case MediaSize.xsmall:
-        return Breakpoint(size, 0);
-      case MediaSize.small:
-        return Breakpoint(size, 600);
-      case MediaSize.large:
-        return Breakpoint(size, 1440);
-      case MediaSize.xlarge:
-        return Breakpoint(size, 1920);
-      default:
-        return Breakpoint(MediaSize.medium, 1024);
-    }
-  }
-}
 
 typedef ApplicationPlugin = Future<void> Function(
   Application application,
@@ -45,8 +18,15 @@ typedef ApplicationPlugin = Future<void> Function(
 
 typedef ApplicationThemeBuilder = ThemeData Function(BuildContext context);
 
+typedef PostRenderAction = void Function(
+  BuildContext context,
+  html.HtmlHtmlElement html,
+);
+
+typedef TitleBuilder = String Function(BuildContext context);
+
 class Application extends Widget {
-  final String currentRoute;
+  final String? currentRoute;
   final List<Route> routes;
   final List<MediaSize> availableSizes;
   final List<Locale> supportedLocales;
@@ -54,16 +34,16 @@ class Application extends Widget {
   final List<ApplicationPlugin> plugins;
   final List<String> stylesheetLinks;
   final List<String> scriptLinks;
-  final ApplicationThemeBuilder theme;
-  final WidgetChildBuilder builder;
-  final PostRenderAction postRender;
+  final ApplicationThemeBuilder? theme;
+  final WidgetChildBuilder? builder;
+  final PostRenderAction? postRender;
 
   /// This list collectively defines the localized resources objects that can
   /// be retrieved with [Localizations.of].
   final List<LocalizationsDelegate<dynamic>> delegates;
 
   Application({
-    @required this.routes,
+    required this.routes,
     this.currentRoute,
     this.theme,
     this.builder,
@@ -77,55 +57,30 @@ class Application extends Widget {
       Locale('en', 'US'),
     ],
     List<MediaSize> availableSizes = MediaSize.values,
-  })  : assert(availableSizes != null && availableSizes.isNotEmpty),
-        availableSizes = <MediaSize>[...availableSizes]
-          ..sort((x, y) => x.index.compareTo(y.index));
+  })  : assert(availableSizes.isNotEmpty),
+        availableSizes = <MediaSize>[...availableSizes]..sort((x, y) => x.index.compareTo(y.index));
 
-  Application withCurrentRoute(String currentRoute) {
-    return Application(
-      routes: routes,
-      currentRoute: currentRoute,
-      theme: theme,
-      stylesheetLinks: stylesheetLinks,
-      scriptLinks: scriptLinks,
-      plugins: plugins,
-      delegates: delegates,
-      supportedLocales: supportedLocales,
-      availableSizes: availableSizes,
-      builder: builder,
-      additionalMeta: additionalMeta,
-      postRender: postRender,
-    );
-  }
+  @override
+  FutureOr<html.HtmlElement> render(BuildContext context) async {
+    final result = await super.render(context);
+    final styles = result.childNodes.firstWhere((x) => x is html.StyleElement);
 
-  String _mediaClassForMediaSize(MediaSize size) {
-    final availableIndex = availableSizes.indexOf(size);
-    final min = availableIndex == 0
-        ? Breakpoint(size, 0)
-        : Breakpoint.defaultBreakpoint(size);
-    final max = availableIndex + 1 >= availableSizes.length
-        ? null
-        : Breakpoint.defaultBreakpoint(availableSizes[availableIndex + 1]);
+    context.styles.entries.forEach((e) {
+      styles.childNodes.add(html.Text('.${e.key} { ${e.value.toString()} }'));
+    });
 
-    final minString = '(min-width: ${min.minSize}px)';
-    final maxString =
-        max == null ? '' : ' and (max-width: ${max.minSize - 1}px)';
-    final buffer = StringBuffer();
-    buffer.write('@media all and $minString$maxString {');
-    for (var current in availableSizes) {
-      buffer.write(
-          '.size${current.index} {display: ${size == current ? "block" : "none"}; } ');
+    for (var plugin in plugins) {
+      await plugin(this, result as html.HtmlHtmlElement);
     }
-    buffer.write('}');
-    return buffer.toString();
+
+    return result;
   }
 
   @override
   FutureOr<html.HtmlElement> renderHtml(BuildContext context) async {
     assert(this.currentRoute != null);
     final document = html.HtmlHtmlElement();
-    final currentRoute =
-        routes.firstWhere((x) => x.relativeUrl == this.currentRoute);
+    final currentRoute = routes.firstWhere((x) => x.relativeUrl == this.currentRoute);
     final head = html.HeadElement();
     head.childNodes.add(html.MetaElement()..setAttribute('charset', 'UTF-8'));
     head.childNodes.add(html.MetaElement()
@@ -159,9 +114,8 @@ class Application extends Widget {
         data: MediaQueryData(size: mediaSize),
         child: Builder(
           builder: (context) => Theme(
-            data: theme(context),
-            child:
-                builder != null ? builder(context, currentRoute) : currentRoute,
+            data: theme != null ? theme!(context) : null,
+            child: builder != null ? builder!(context, currentRoute) : currentRoute,
           ),
         ),
       );
@@ -182,24 +136,62 @@ class Application extends Widget {
     return document;
   }
 
-  @override
-  FutureOr<html.HtmlElement> render(BuildContext context) async {
-    final result = await super.render(context);
-    final styles = result.childNodes.firstWhere((x) => x is html.StyleElement);
+  Application withCurrentRoute(String currentRoute) {
+    return Application(
+      routes: routes,
+      currentRoute: currentRoute,
+      theme: theme,
+      stylesheetLinks: stylesheetLinks,
+      scriptLinks: scriptLinks,
+      plugins: plugins,
+      delegates: delegates,
+      supportedLocales: supportedLocales,
+      availableSizes: availableSizes,
+      builder: builder,
+      additionalMeta: additionalMeta,
+      postRender: postRender,
+    );
+  }
 
-    context.styles.entries.forEach((e) {
-      styles.childNodes.add(html.Text('.${e.key} { ${e.value.toString()} }'));
-    });
+  String _mediaClassForMediaSize(MediaSize size) {
+    final availableIndex = availableSizes.indexOf(size);
+    final min = availableIndex == 0 ? Breakpoint(size, 0) : Breakpoint.defaultBreakpoint(size);
+    final max = availableIndex + 1 >= availableSizes.length
+        ? null
+        : Breakpoint.defaultBreakpoint(availableSizes[availableIndex + 1]);
 
-    for (var plugin in plugins) {
-      await plugin(this, result as html.HtmlHtmlElement);
+    final minString = '(min-width: ${min.minSize}px)';
+    final maxString = max == null ? '' : ' and (max-width: ${max.minSize - 1}px)';
+    final buffer = StringBuffer();
+    buffer.write('@media all and $minString$maxString {');
+    for (var current in availableSizes) {
+      buffer.write('.size${current.index} {display: ${size == current ? "block" : "none"}; } ');
     }
-
-    return result;
+    buffer.write('}');
+    return buffer.toString();
   }
 }
 
-typedef TitleBuilder = String Function(BuildContext context);
+class Breakpoint {
+  final int minSize;
+  final MediaSize size;
+  const Breakpoint(this.size, this.minSize);
+
+  static Breakpoint defaultBreakpoint(MediaSize size) {
+    switch (size) {
+      case MediaSize.xsmall:
+        return Breakpoint(size, 0);
+      case MediaSize.small:
+        return Breakpoint(size, 600);
+      case MediaSize.large:
+        return Breakpoint(size, 1440);
+      case MediaSize.xlarge:
+        return Breakpoint(size, 1920);
+      default:
+        return Breakpoint(MediaSize.medium, 1024);
+    }
+  }
+}
 
 class Route extends Widget {
   final TitleBuilder title;
@@ -207,9 +199,9 @@ class Route extends Widget {
   final WidgetBuilder builder;
 
   const Route({
-    @required this.title,
-    @required this.relativeUrl,
-    @required this.builder,
+    required this.title,
+    required this.relativeUrl,
+    required this.builder,
   });
 
   void head(BuildContext context, html.HeadElement head) {
@@ -218,6 +210,6 @@ class Route extends Widget {
 
   @override
   FutureOr<html.HtmlElement> renderHtml(BuildContext context) {
-    return builder(context).render(context);
+    return builder(context)!.render(context);
   }
 }
